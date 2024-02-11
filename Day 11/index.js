@@ -1,0 +1,38 @@
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const app = express();
+require("dotenv").config();
+
+function authenticationMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+  jwt.verify(token, process.env.SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
+    } else {
+      req.user = decoded;
+      next();
+    }
+  });
+}
+
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
+app.get("/protected", authenticationMiddleware, (req, res) => {
+  res.send("Protected route accessed successfully");
+});
+
+const PORT = process.env.PORT;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+const secretKey = process.env.SECRET;
+const token = jwt.sign({}, secretKey, { expiresIn: "1h" });
+
+console.log("Generated token", token);
